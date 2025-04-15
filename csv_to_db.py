@@ -25,9 +25,12 @@ def create_db_connection():
 def _populate_product_data(conn, csv_file):
     # Create a string buffer
     # Read the train.csv file into a pandas dataframe, skipping bad lines
-    df = pd.read_csv(csv_file, on_bad_lines="skip")  
+    df = pd.read_csv(csv_file, on_bad_lines="skip")
     output = StringIO()
     df_copy = df.copy()
+
+    # Drop rows where any column value is empty
+    df_copy = df_copy.dropna()
 
     # Convert year to integer if it's not already
     df_copy['year'] = df_copy['year'].astype('Int64')
@@ -44,7 +47,7 @@ def _populate_product_data(conn, csv_file):
         # Use COPY to insert data
             cur.copy_from(
                 file=output,
-                table='product_details',
+                table='products',
                 null='\\N'
             )
 
@@ -57,9 +60,9 @@ if __name__ == "__main__":
     conn.autocommit = True
     cur = conn.cursor()
 
-    cur.execute("DROP TABLE IF EXISTS product_details CASCADE;")
+    cur.execute("DROP TABLE IF EXISTS products CASCADE;")
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS product_details (
+        CREATE TABLE IF NOT EXISTS products (
             img_id TEXT,
             gender VARCHAR(50),
             masterCategory VARCHAR(100),
